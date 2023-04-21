@@ -1,4 +1,6 @@
-const { CommandType } = require('wokcommands');
+const {
+    CommandType
+} = require('wokcommands');
 
 module.exports = {
     name: 'quiz',
@@ -6,76 +8,59 @@ module.exports = {
     type: CommandType.BOTH,
     expectedArgs: '<choice 1> <choice 2> <correct answer index> <time in minutes>',
     minArgs: 4,
-    callback: ({ message, interaction, args }) => {
+    callback: ({
+        message,
+        interaction,
+        args
+    }) => {
         const question = `คุณไมค์ชอบกินอะไร`;
         const choices = [args[0], args[1]];
         const correctAns = parseInt(args[2]) - 1;
         const timeLimit = parseFloat(args[3]) * 60 * 1000; // In Min
 
-        // Create and send your message
         const target = message || interaction;
         if (!target) {
             console.log('Error: No message or interaction object available.');
             return;
-        }
-        target.delete();
-        const questionString = `${question}\n\n${choices.map((choice, index) => `${index + 1} - ${choice}`).join('\n')}`;
-        target.channel.send(questionString);
+        };
 
-        // Listen for the user's response and check if it's correct
-        const filter = m => m.author.id === (message ? message.author.id : interaction.user.id);
-        const collector = target.channel.createMessageCollector({ filter, time: timeLimit });
+        if (target == message) {
+            target.delete();
+        };
+
+        target.channel.send(
+            `${question}\n\n${choices
+                .map((choice, index) => `${index + 1} - ${choice}`)
+                .join('\n')}`
+        );
+
+        const filter = (m) => {
+            return !m.author.bot;
+        };
+
+        const collector = target.channel.createMessageCollector({
+            filter,
+            time: timeLimit,
+        });
 
         const answeredUsers = new Set();
 
-        // When a player sends a message, check if they have already responded previously
-        collector.on('collect', m => {
-            // Check if user has already answered
+        collector.on('collect', (m) => {
             if (answeredUsers.has(m.author.id)) {
-                m.delete();
-                m.channel.send(`${m.author}, ตอบได้เพียงครั้งเดียวเท่านั้น ❌`)
-                    .then((message) => {
-                        setTimeout(() => {
-                            message.delete();
-                        }, 1500);
-                    });
-                return;
+                return m.reply(`ตอบได้เพียงครั้งเดียวเท่านั้น ❌`);
             } else {
-                // Add new user object to set
+                if (m.content !== '1' && m.content !== '2') {
+                    return m.reply(`ตอบได้เพียง 1 กับ 2 เท่านั้น 🔃`);
+                };
                 answeredUsers.add(m.author.id);
-            };
-
-            if (m.content !== '1' && m.content !== '2') {
-                m.channel.send(`${m.author} ตอบได้เพียง 1 กับ 2 เท่านั้น! กรุณาตอบใหม่อีกครั้ง ❌`);
-                return answeredUsers.delete(m.author.id);
+                return m.reply(`เราได้บันทึกคำตอบของคุณแล้ว ✅`);
             };
         });
 
-        // After time runs out, calculate number of correct answers and send result message
-        collector.on('end', collected => {
-            const target = message || interaction;
-            if (!target) {
-                console.log('Error: No message or interaction object available.');
-                return;
+        collector.on('end', (collected) => {
+            for (const AllAnswer of collected) {
+                console.log(AllAnswer);
             }
-
-            const correctUser = collected.filter(m => parseInt(m.content) - 1 === correctAns);
-
-            console.log(correctUser);
-
-            if (correctUser.size === 0) {
-                return target.channel.send(`😢 ไม่มีใครตอบถูกเลย!`);
-            }
-
-            const correctUsernames = correctUser.map(m => m.author).join(', ');
-
-            const channel = target.channel;
-
-            channel.send(`
-                ❗ มีคนตอบทั้งหมด ${collected.size} คน ถูก ${correctUser.size} คน
-                \n\n✅ คำตอบที่ถูกต้องคือ ${correctAns + 1} - ${choices[correctAns]}
-                \n\n🎉 ผู้ที่ตอบถูกได้แก่ ${correctUsernames}
-            `);
         });
     },
 };
