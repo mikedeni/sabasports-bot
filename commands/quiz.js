@@ -3,7 +3,6 @@ const {
 } = require('wokcommands');
 
 module.exports = {
-    name: 'quiz',
     description: 'คำถามที่กระตุ้นให้คิด',
     type: CommandType.BOTH,
     expectedArgs: '<question> <choice 1> <choice 2> <correct choice> <time in minutes>',
@@ -11,8 +10,10 @@ module.exports = {
     callback: ({
         args,
         channel,
-        message
+        message,
+        guild
     }) => {
+        console.log(`Run guilId: ${guild.id}`);
         if (message) {
             message.delete();
         };
@@ -43,7 +44,10 @@ module.exports = {
             }
         }
 
-        channel.send({ embeds: [embed] });
+        let quizId = ''
+        channel.send({ embeds: [embed] }).then(msg => {
+            quizId = msg.id
+        })
 
         const filter = (m) => {
             return !m.author.bot;
@@ -56,6 +60,7 @@ module.exports = {
 
         const answeredUsers = new Set();
         const correctUsers = [];
+        const CorrectUserId = [];
 
         console.log(`[CMD] Run Quiz!!`);
 
@@ -71,6 +76,7 @@ module.exports = {
                     console.log(`${m.author} Ans: ${parseInt(m.content)}`);
                     console.log(`${m.author} Correct!`);
                     correctUsers.push(m.author);
+                    CorrectUserId.push(m.author.id);
                 } else {
                     console.log(`${m.author} Ans: ${parseInt(m.content)}`);
                     console.log(`${m.author} Incorrect!`);
@@ -104,15 +110,29 @@ module.exports = {
                     }
                 ],
                 "footer": {
-                    "text": `🙏 ขอบคุณทุกท่านที่เข้าร่วม`
+                    "text": `Sabasports X Quiz`
                 }
-            }
-
-            if (correctUsers.length != 0) {
-                channel.send({ embeds: [embed], content: `🎉 คำถามจบลงแล้ว ผู้ที่ตอบถูกคือ ${correctUsers}` });
-            } else {
-                channel.send({ embeds: [embed], content: `🎉 คำถามจบลงแล้ว ไม่มีผู้ที่ตอบถูก 😢` });
             };
+
+            const content = correctUsers.length != 0 ? `🎉 คำถามจบลงแล้ว ผู้ที่ตอบถูกคือ ${correctUsers}` : `🎉 คำถามจบลงแล้ว ไม่มีผู้ที่ตอบถูก 😢`;
+
+            channel.send({ embeds: [embed], content })
+            console.log(`Correct userId: ${correctUsers}`);
+
+            // Loop through each user ID in the CorractUserId array
+            for (let i = 0; i < CorrectUserId.length; i++) {
+                const Addpoint = {
+                    guildId: guild.id,
+                    userId: CorrectUserId[i], // Use the current user ID from the array
+                    $inc: {
+                        point: 1
+                    }
+                };
+                // Do something with the Addpoint object here
+                console.log(Addpoint);
+            }
         });
+
+        return ({ content: `Quiz Send!`, ephemeral: true });
     },
 };

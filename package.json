@@ -12,6 +12,7 @@
   "dependencies": {
     "discord.js": "^14.9.0",
     "dotenv": "^16.0.3",
+    "mongoose": "^7.0.4",
     "wokcommands": "^2.1.3"
   }
 }
