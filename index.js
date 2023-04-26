@@ -4,12 +4,7 @@ const WOK = require("wokcommands");
 require("dotenv/config");
 
 const client = new Client({
-  intents: [
-    IntentsBitField.Flags.Guilds,
-    IntentsBitField.Flags.GuildMessages,
-    IntentsBitField.Flags.DirectMessages,
-    IntentsBitField.Flags.MessageContent,
-  ],
+  intents: 3276799,
   partials: [Partials.Channel],
 });
 
